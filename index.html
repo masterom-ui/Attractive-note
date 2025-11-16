@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Study Notes AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Kalam:wght@400;700&family=EB+Garamond:wght@400;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<style>
+      :root {
+        --font-sans: 'Inter', sans-serif;
+        --font-pen: 'Kalam', cursive;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--font-sans);
+        color: var(--text-primary);
+        background-color: var(--bg-gradient-start);
+        background-image: linear-gradient(-45deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end), var(--bg-gradient-start));
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        transition: background-color 0.5s ease;
+      }
+
+      [data-theme='abyss'] {
+        --bg-primary: #000000;
+        --bg-secondary: #111827;
+        --bg-secondary-translucent: rgba(17, 24, 39, 0.8);
+        --bg-tertiary: #1f2937;
+        --bg-hover: #374151;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --text-tertiary: #9ca3af;
+        --accent-primary: #60a5fa;
+        --accent-secondary: #34d399;
+        --accent-glow: rgba(96, 165, 250, 0.5);
+        --border-primary: rgba(255, 255, 255, 0.1);
+        --border-secondary: #4b5563;
+        --highlight-gradient-start: #60a5fa;
+        --highlight-gradient-end: #34d399;
+        --bg-gradient-start: #111827;
+        --bg-gradient-mid: #1f2937;
+        --bg-gradient-end: #10151d;
+        --font-pen: 'Kalam', cursive;
+        --font-sans: 'Inter', sans-serif;
+      }
+
+      [data-theme='paper'] {
+        --bg-primary: #fdfaef; /* Creamy paper */
+        --bg-secondary: #fbf6e9; /* Slightly darker cream for cards */
+        --bg-secondary-translucent: rgba(251, 246, 233, 0.8);
+        --bg-tertiary: #f3f4f6; /* Keep this neutral for some elements */
+        --bg-hover: #e5e7eb;
+        --text-primary: #1f2937; /* Dark ink */
+        --text-secondary: #374151; /* Lighter pencil/ink */
+        --text-tertiary: #6b7280;
+        --accent-primary: #3b82f6; /* Blue pen ink */
+        --accent-secondary: #facc15; /* Yellow highlighter */
+        --accent-glow: rgba(59, 130, 246, 0.4);
+        --border-primary: rgba(0, 0, 0, 0.1);
+        --border-secondary: #d4d0c2; /* Faint line color for ruled paper */
+        --highlight-gradient-start: #3b82f6;
+        --highlight-gradient-end: #facc15;
+        --bg-gradient-start: #f3f4f6;
+        --bg-gradient-mid: #e5e7eb;
+        --bg-gradient-end: #f9fafb;
+        --font-pen: 'Kalam', cursive;
+        --font-sans: 'Inter', sans-serif;
+      }
+
+       [data-theme='cyberpunk'] {
+        --bg-primary: #0d0c22;
+        --bg-secondary: #1a193d;
+        --bg-secondary-translucent: rgba(26, 25, 61, 0.8);
+        --bg-tertiary: #2a285e;
+        --bg-hover: #3c3a88;
+        --text-primary: #f0f2f5;
+        --text-secondary: #a0a4c0;
+        --text-tertiary: #7a7e9e;
+        --accent-primary: #00f6ff; /* Neon Cyan */
+        --accent-secondary: #ff00ff; /* Neon Magenta */
+        --accent-glow: rgba(0, 246, 255, 0.6);
+        --border-primary: rgba(0, 246, 255, 0.2);
+        --border-secondary: #00f6ff;
+        --highlight-gradient-start: #00f6ff;
+        --highlight-gradient-end: #ff00ff;
+        --bg-gradient-start: #0d0c22;
+        --bg-gradient-mid: #1a193d;
+        --bg-gradient-end: #0c0a1f;
+        --font-pen: 'Kalam', cursive;
+        --font-sans: 'Inter', sans-serif;
+      }
+
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
+      
+      .font-pen { font-family: var(--font-pen); }
+      
+      /* --- Notebook Styles --- */
+      .notebook-container {
+        width: 100%;
+        max-width: 1200px;
+        height: 85vh;
+        perspective: 2500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .notebook {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+      }
+      .page {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: left center;
+        transition: transform 1s ease-in-out;
+        transform-style: preserve-3d;
+      }
+      .page.flipped {
+        transform: rotateY(-180deg);
+      }
+      .page-front, .page-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        padding: 2rem 2.5rem;
+      }
+      .page-front {
+        border-radius: 0 10px 10px 0;
+        z-index: 2;
+      }
+      .page-back {
+        border-radius: 10px 0 0 10px;
+        transform: rotateY(180deg);
+        z-index: 1;
+      }
+      .page-content.ruled {
+        background-image: repeating-linear-gradient(var(--bg-primary), var(--bg-primary) 1.75rem, var(--border-secondary) 1.8rem, var(--bg-primary) 1.8rem);
+        line-height: 1.8rem;
+      }
+       .page-content.graph {
+        background-size: 20px 20px;
+        background-image:
+            linear-gradient(to right, var(--border-primary) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--border-primary) 1px, transparent 1px);
+      }
+      .page-content.ruled::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 35px;
+        bottom: 0;
+        width: 2px;
+        background: #ffaaab;
+        opacity: 0.6;
+      }
+      .notebook-cover {
+        background: linear-gradient(45deg, var(--bg-secondary), var(--bg-tertiary));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* --- Topper Notes Styles --- */
+       .topper-note-section h3 {
+        font-family: var(--font-pen);
+        font-size: 1.75rem;
+        color: var(--accent-primary);
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 2px solid var(--border-secondary);
+       }
+      .highlight-yellow { /* Definition */
+        background-color: rgba(250, 204, 21, 0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        border-left: 3px solid #facc15;
+      }
+       .formula-box { /* Formula / Key Terms */
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-secondary);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+       }
+       .highlight-pink {
+         border-left: 3px solid #f472b6;
+       }
+       .mistake-box { /* Common Mistakes */
+        background-color: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+       }
+       .pyq-section {
+         border-top: 1px dashed var(--border-secondary);
+         margin-top: 1.5rem;
+         padding-top: 1rem;
+       }
+        .highlight-green {
+          color: #34d399;
+          font-weight: bold;
+        }
+
+       ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--border-secondary);
+        border-radius: 10px;
+        border: 2px solid var(--bg-primary);
+      }
+
+    </style>
+</head>
+  <body class="text-white font-sans">
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
